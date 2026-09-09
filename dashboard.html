@@ -18,7 +18,7 @@
             </button>
         </div>
 
-        <!-- Filtros -->
+        <!-- Filtros Principales -->
         <div class="bg-white p-6 rounded-lg shadow grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Nivel</label>
@@ -67,9 +67,18 @@
                         <h3 class="text-lg font-bold mb-4 text-gray-700">Calibración por Camión</h3>
                         <canvas id="graficoCamiones" height="200"></canvas>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4 text-gray-700">Calibración por Vaso</h3>
-                        <canvas id="graficoVasos" height="200"></canvas>
+                    
+                    <!-- NUEVO GRÁFICO: Curva de Gasificación x Toma -->
+                    <div class="bg-white p-6 rounded-lg shadow flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-lg font-bold text-gray-700 leading-tight">Control de Densidades<br><span class="text-sm font-normal text-gray-500">x Toma x MMU</span></h3>
+                            
+                            <!-- Filtro Interno para el Producto -->
+                            <select id="filtroProductoGrafico" onchange="actualizarGraficoGasificacion()" class="p-1 border border-gray-400 rounded bg-blue-50 text-sm font-bold text-blue-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <!-- Se llena dinámicamente -->
+                            </select>
+                        </div>
+                        <canvas id="graficoGasificacion" height="200"></canvas>
                     </div>
                 </div>
 
@@ -112,10 +121,6 @@
     <script>
         const urlGoogleScript = "https://script.google.com/macros/s/AKfycbyvsDKF4T-Ge4wLAyEoyxS9El2lHlP-El62zbMUBXNc_QKJjbby3y9Lm4VnOsaXrlZ6/exec"; 
         
-        // =========================================================
-        // ⚠️ DICCIONARIO INTERNO DE RANGOS ⚠️
-        // EL DASHBOARD EVALÚA AQUÍ SI ESTÁ BIEN O MAL
-        // =========================================================
         const diccionarioRangos = {
             "HA 37": { min: 1.010, max: 1.070 },
             "HA 45": { min: 1.150, max: 1.250 },
@@ -124,11 +129,17 @@
         };
 
         let datosGlobales = [];
+        let filtradosActuales = []; // Guarda los datos después del filtro principal de Nivel/Proyecto
+        
+        // Instancias de gráficos
         let graficoInstance = null;
         let graficoCamionesInstance = null;
-        let graficoVasosInstance = null;
+        let graficoGasificacionInstance = null; // Instancia del nuevo gráfico
         let graficoMezclaInstance = null;
         let graficoRocaInstance = null;
+
+        // Paleta de colores para las líneas de camiones
+        const paletaMMU = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
 
         async function cargarDatos() {
             try {
@@ -152,21 +163,25 @@
             
             document.getElementById('filtroProyecto').innerHTML = '<option value="TODOS">Todos los Proyectos</option>' + 
                 proyectos.map(p => `<option value="${p}">${p}</option>`).join('');
+
+            // Llenar filtro interno del gráfico de gasificación con los productos del diccionario
+            const selectorProducto = document.getElementById('filtroProductoGrafico');
+            selectorProducto.innerHTML = Object.keys(diccionarioRangos).map(p => `<option value="${p}">${p}</option>`).join('');
         }
 
         function aplicarFiltros() {
             const nivelSel = document.getElementById('filtroNivel').value;
             const proyectoSel = document.getElementById('filtroProyecto').value;
             
-            let filtrados = datosGlobales;
+            filtradosActuales = datosGlobales;
             
             if (nivelSel !== "TODOS") {
-                filtrados = filtrados.filter(d => d['Nivel'] != null && String(d['Nivel']).trim().toLowerCase() === String(nivelSel).trim().toLowerCase());
+                filtradosActuales = filtradosActuales.filter(d => d['Nivel'] != null && String(d['Nivel']).trim().toLowerCase() === String(nivelSel).trim().toLowerCase());
             }
             if (proyectoSel !== "TODOS") {
-                filtrados = filtrados.filter(d => d['Proyecto'] != null && String(d['Proyecto']).trim().toLowerCase() === String(proyectoSel).trim().toLowerCase());
+                filtradosActuales = filtradosActuales.filter(d => d['Proyecto'] != null && String(d['Proyecto']).trim().toLowerCase() === String(proyectoSel).trim().toLowerCase());
             }
-            procesarDashboard(filtrados);
+            procesarDashboard(filtradosActuales);
         }
 
         function procesarDashboard(datos) {
@@ -175,7 +190,6 @@
             
             const labelsTaladros = [], dataDensidad = [];
             const desempeñoCamiones = {}; 
-            const desempeñoVasos = {};
             const desviacionesMezcla = {};
             const acumuladorRoca = {};
 
@@ -183,16 +197,13 @@
                 const densidad = parseFloat(d['Densidad Medida']);
                 const mezcla = d['Tipo de Mezcla'] ? String(d['Tipo de Mezcla']).trim() : '';
                 const camion = d['Camión'] ? String(d['Camión']).trim() : 'S/A';
-                const vaso = d['Vaso'] ? String(d['Vaso']).trim() : 'S/A';
                 const roca = d['Tipo de Roca'] ? String(d['Tipo de Roca']).trim() : 'Desconocida';
                 
-                // IMPORTANTE: Ya no lee el "Rango Teórico" del excel. Solo verifica que la mezcla exista en el diccionario interno
                 if(isNaN(densidad) || !diccionarioRangos[mezcla]) return;
 
                 const rangoObjetivo = diccionarioRangos[mezcla];
 
                 if (!desempeñoCamiones[camion]) desempeñoCamiones[camion] = { ok: 0, desviado: 0 };
-                if (!desempeñoVasos[vaso]) desempeñoVasos[vaso] = { ok: 0, desviado: 0 };
                 if (!desviacionesMezcla[mezcla]) desviacionesMezcla[mezcla] = 0;
                 if (!acumuladorRoca[roca]) acumuladorRoca[roca] = { suma: 0, total: 0 };
 
@@ -200,16 +211,13 @@
                 acumuladorRoca[roca].total++;
 
                 let estadoHtml = '';
-                // Evalúa usando el diccionario interno
                 if (densidad >= rangoObjetivo.min && densidad <= rangoObjetivo.max) {
                     aprobados++;
                     desempeñoCamiones[camion].ok++;
-                    desempeñoVasos[vaso].ok++;
                     estadoHtml = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded font-bold text-xs">🟢 OK</span>';
                 } else {
                     desviados++;
                     desempeñoCamiones[camion].desviado++;
-                    desempeñoVasos[vaso].desviado++;
                     desviacionesMezcla[mezcla]++; 
                     estadoHtml = '<span class="bg-red-100 text-red-800 px-2 py-1 rounded font-bold text-xs">🔴 DESVIADO</span>';
                 }
@@ -232,15 +240,111 @@
             document.getElementById('tablaDetalle').innerHTML = filasTabla || '<tr><td colspan="3" class="text-center p-4 text-red-500 font-bold">No hay datos válidos para este filtro</td></tr>';
 
             dibujarGraficoLineas('graficoTendencia', graficoInstance, labelsTaladros, dataDensidad, 'Densidad Medida', 'rgb(59, 130, 246)', true);
-            dibujarGraficoApilado('graficoCamiones', graficoCamionesInstance, desempeñoCamiones, 'Camión');
-            dibujarGraficoApilado('graficoVasos', graficoVasosInstance, desempeñoVasos, 'Vaso');
+            dibujarGraficoApilado('graficoCamiones', graficoCamionesInstance, desempeñoCamiones);
             dibujarGraficoDona('graficoMezcla', graficoMezclaInstance, desviacionesMezcla);
             dibujarGraficoRoca('graficoRoca', graficoRocaInstance, acumuladorRoca);
+
+            // Llamamos a dibujar el nuevo gráfico de gasificación al final
+            actualizarGraficoGasificacion();
         }
+
+        // ==========================================
+        // NUEVA LÓGICA: GRÁFICO TOMAS x MMU
+        // ==========================================
+        function actualizarGraficoGasificacion() {
+            const productoSel = document.getElementById('filtroProductoGrafico').value;
+            const ctx = document.getElementById('graficoGasificacion').getContext('2d');
+            
+            if (graficoGasificacionInstance) graficoGasificacionInstance.destroy();
+            if (!productoSel) return;
+
+            // 1. Filtrar solo los datos que correspondan al producto seleccionado
+            const datosProducto = filtradosActuales.filter(d => {
+                const mezcla = d['Tipo de Mezcla'] ? String(d['Tipo de Mezcla']).trim() : '';
+                return mezcla === productoSel;
+            });
+
+            // 2. Agrupar por camión y extraer fecha/densidad
+            const agrupadoCamiones = {};
+            datosProducto.forEach(d => {
+                const camion = d['Camión'] ? String(d['Camión']).trim() : 'S/A';
+                const densidad = parseFloat(d['Densidad Medida']);
+                
+                // Intentamos convertir la Fecha/Hora a un objeto Date para poder ordenarlo
+                // Si la celda Fecha/Hora está vacía, se irá al final o se descartará el orden
+                let fechaObj = new Date(d['Fecha/Hora']);
+                if(isNaN(fechaObj.getTime())) {
+                    // Si el formato de sheets no se parsea automático, creamos un timestamp falso 
+                    // para que no rompa el código, asumiendo el orden en el que llegaron.
+                    fechaObj = new Date(0); 
+                }
+
+                if (!agrupadoCamiones[camion]) agrupadoCamiones[camion] = [];
+                if (!isNaN(densidad)) {
+                    agrupadoCamiones[camion].push({ densidad: densidad, tiempoObj: fechaObj });
+                }
+            });
+
+            // 3. Ordenar las tomas de cada camión cronológicamente y preparar datasets
+            let datasets = [];
+            let maxTomas = 0;
+            let colorIndex = 0;
+
+            for (let camion in agrupadoCamiones) {
+                // Ordenar del más antiguo (Toma 1) al más reciente
+                agrupadoCamiones[camion].sort((a, b) => a.tiempoObj - b.tiempoObj);
+                
+                // Extraer solo las densidades ya ordenadas
+                const datosOrdenados = agrupadoCamiones[camion].map(item => item.densidad);
+                
+                if (datosOrdenados.length > maxTomas) {
+                    maxTomas = datosOrdenados.length;
+                }
+
+                datasets.push({
+                    label: camion,
+                    data: datosOrdenados,
+                    borderColor: paletaMMU[colorIndex % paletaMMU.length],
+                    backgroundColor: paletaMMU[colorIndex % paletaMMU.length],
+                    borderDash: [5, 5], // Línea punteada para replicar tu imagen
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    fill: false,
+                    tension: 0.2 // Curva suave
+                });
+                colorIndex++;
+            }
+
+            // 4. Generar el Eje X (Toma 1, Toma 2, Toma 3...)
+            let labelsEjeX = [];
+            for (let i = 1; i <= maxTomas; i++) {
+                labelsEjeX.push(`Toma ${i}`);
+            }
+
+            // 5. Dibujar
+            graficoGasificacionInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labelsEjeX,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { title: { display: true, text: 'Densidad (g/cc)' } }
+                    },
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, usePointStyle: true } },
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+        }
+        // ==========================================
 
         function dibujarGraficoLineas(idCanvas, instanciaVar, labels, data, titulo, color, fill) {
             const ctx = document.getElementById(idCanvas).getContext('2d');
-            if (instanciaVar) instanciaVar.destroy(); 
+            if (window[idCanvas + 'Instance']) window[idCanvas + 'Instance'].destroy(); 
             window[idCanvas + 'Instance'] = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -255,9 +359,9 @@
             });
         }
 
-        function dibujarGraficoApilado(idCanvas, instanciaVar, datosDesempeño, labelX) {
+        function dibujarGraficoApilado(idCanvas, instanciaVar, datosDesempeño) {
             const ctx = document.getElementById(idCanvas).getContext('2d');
-            if (instanciaVar) instanciaVar.destroy();
+            if (window[idCanvas + 'Instance']) window[idCanvas + 'Instance'].destroy();
             
             const etiquetas = Object.keys(datosDesempeño);
             const dataOk = etiquetas.map(k => datosDesempeño[k].ok);
@@ -278,7 +382,7 @@
 
         function dibujarGraficoDona(idCanvas, instanciaVar, datosMezcla) {
             const ctx = document.getElementById(idCanvas).getContext('2d');
-            if (instanciaVar) instanciaVar.destroy();
+            if (window[idCanvas + 'Instance']) window[idCanvas + 'Instance'].destroy();
 
             const mezclasConError = Object.keys(datosMezcla).filter(k => datosMezcla[k] > 0);
             const conteoErrores = mezclasConError.map(k => datosMezcla[k]);
@@ -305,7 +409,7 @@
 
         function dibujarGraficoRoca(idCanvas, instanciaVar, datosRoca) {
             const ctx = document.getElementById(idCanvas).getContext('2d');
-            if (instanciaVar) instanciaVar.destroy();
+            if (window[idCanvas + 'Instance']) window[idCanvas + 'Instance'].destroy();
 
             const etiquetas = Object.keys(datosRoca);
             const promedios = etiquetas.map(k => (datosRoca[k].suma / datosRoca[k].total).toFixed(3));
