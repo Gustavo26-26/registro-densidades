@@ -1,88 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Control de Densidades</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
-
-    <div class="max-w-7xl mx-auto space-y-6">
-        <!-- Encabezado -->
-        <div class="bg-blue-900 text-white p-6 rounded-lg shadow-lg flex justify-between items-center">
-            <h1 class="text-2xl font-bold">Panel de Control de Voladura</h1>
-            <button onclick="cargarDatos()" class="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded shadow">
-                🔄 Actualizar Datos
-            </button>
-        </div>
-
-        <!-- Filtros -->
-        <div class="bg-white p-6 rounded-lg shadow grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Nivel</label>
-                <select id="filtroNivel" class="mt-1 block w-full p-2 border border-gray-300 rounded text-lg bg-gray-50">
-                    <option value="TODOS">Todos los Niveles</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Proyecto</label>
-                <select id="filtroProyecto" class="mt-1 block w-full p-2 border border-gray-300 rounded text-lg bg-gray-50">
-                    <option value="TODOS">Todos los Proyectos</option>
-                </select>
-            </div>
-            <button onclick="aplicarFiltros()" class="bg-green-600 text-white p-2 rounded text-lg font-bold hover:bg-green-700">
-                Aplicar Filtros
-            </button>
-        </div>
-
-        <!-- KPIs (Tarjetas de Resumen) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
-                <h3 class="text-gray-500 font-bold">Total Taladros Medidos</h3>
-                <p id="kpiTotal" class="text-4xl font-black text-gray-800">0</p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-500">
-                <h3 class="text-gray-500 font-bold">Fuera de Rango</h3>
-                <p id="kpiDesviados" class="text-4xl font-black text-red-600">0</p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
-                <h3 class="text-gray-500 font-bold">Dentro de Rango</h3>
-                <p id="kpiAprobados" class="text-4xl font-black text-green-600">0</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Gráfico de Tendencia -->
-            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow">
-                <h3 class="text-lg font-bold mb-4 text-gray-700">Tendencia de Densidad por Taladro</h3>
-                <canvas id="graficoTendencia" height="100"></canvas>
-            </div>
-
-            <!-- Lista de Taladros Críticos -->
-            <div class="bg-white p-6 rounded-lg shadow overflow-hidden flex flex-col">
-                <h3 class="text-lg font-bold mb-4 text-gray-700">Detalle de Mediciones</h3>
-                <div class="overflow-y-auto flex-1 max-h-80">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100 text-sm">
-                                <th class="p-2 border-b">Taladro</th>
-                                <th class="p-2 border-b">Densidad</th>
-                                <th class="p-2 border-b">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaDetalle" class="text-sm">
-                            <!-- Se llena con JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ¡PEGA AQUÍ TU URL DE APPS SCRIPT!
+// ¡PEGA AQUÍ TU URL DE APPS SCRIPT!
         const urlGoogleScript = "https://script.google.com/macros/s/AKfycbyvsDKF4T-Ge4wLAyEoyxS9El2lHlP-El62zbMUBXNc_QKJjbby3y9Lm4VnOsaXrlZ6/exec"; 
         
         let datosGlobales = [];
@@ -90,15 +6,13 @@
 
         async function cargarDatos() {
             try {
-                // Cambiamos el texto del botón mientras carga
                 document.getElementById('tablaDetalle').innerHTML = '<tr><td colspan="3" class="text-center p-4">Cargando datos desde la mina...</td></tr>';
                 
                 const respuesta = await fetch(urlGoogleScript);
                 datosGlobales = await respuesta.json();
                 
-                // Extraer Niveles y Proyectos únicos para los filtros
                 llenarFiltros();
-                aplicarFiltros(); // Dibuja la primera vez con todos los datos
+                aplicarFiltros(); 
             } catch (error) {
                 console.error("Error cargando datos:", error);
                 alert("Error al conectar con la base de datos.");
@@ -106,13 +20,14 @@
         }
 
         function llenarFiltros() {
+            // Extraemos valores únicos filtrando celdas vacías
             const niveles = [...new Set(datosGlobales.map(d => d['Nivel']))].filter(Boolean);
             const proyectos = [...new Set(datosGlobales.map(d => d['Proyecto']))].filter(Boolean);
             
             const selectNivel = document.getElementById('filtroNivel');
             const selectProyecto = document.getElementById('filtroProyecto');
             
-            // Mantener la opción "Todos" y agregar las nuevas
+            // Llenamos los selects
             selectNivel.innerHTML = '<option value="TODOS">Todos los Niveles</option>' + 
                 niveles.map(n => `<option value="${n}">${n}</option>`).join('');
             
@@ -126,8 +41,25 @@
             
             let filtrados = datosGlobales;
             
-            if (nivelSel !== "TODOS") filtrados = filtrados.filter(d => d['Nivel'] === nivelSel);
-            if (proyectoSel !== "TODOS") filtrados = filtrados.filter(d => d['Proyecto'] === proyectoSel);
+            // FILTRO ULTRA-ROBUSTO PARA NIVEL
+            if (nivelSel !== "TODOS") {
+                filtrados = filtrados.filter(d => {
+                    if (d['Nivel'] == null) return false;
+                    const valorHoja = String(d['Nivel']).trim().toLowerCase();
+                    const valorFiltro = String(nivelSel).trim().toLowerCase();
+                    return valorHoja === valorFiltro;
+                });
+            }
+            
+            // FILTRO ULTRA-ROBUSTO PARA PROYECTO
+            if (proyectoSel !== "TODOS") {
+                filtrados = filtrados.filter(d => {
+                    if (d['Proyecto'] == null) return false;
+                    const valorHoja = String(d['Proyecto']).trim().toLowerCase();
+                    const valorFiltro = String(proyectoSel).trim().toLowerCase();
+                    return valorHoja === valorFiltro;
+                });
+            }
 
             procesarDashboard(filtrados);
         }
@@ -142,12 +74,11 @@
 
             datos.forEach(d => {
                 const densidad = parseFloat(d['Densidad Medida']);
-                const rangoStr = d['Rango Teórico']; // Ej: "1.010 - 1.070"
+                const rangoStr = d['Rango Teórico']; 
                 
                 if(isNaN(densidad) || !rangoStr) return;
 
-                // Lógica del Semáforo
-                const partes = rangoStr.split('-');
+                const partes = String(rangoStr).split('-');
                 const min = parseFloat(partes[0].trim());
                 const max = parseFloat(partes[1].trim());
                 
@@ -160,11 +91,9 @@
                     estadoHtml = '<span class="bg-red-100 text-red-800 px-2 py-1 rounded font-bold text-xs">🔴 DESVIADO</span>';
                 }
 
-                // Datos para el gráfico
                 labelsTaladros.push(`Tal-${d['Taladro']}`);
                 dataDensidad.push(densidad);
 
-                // Filas de la tabla
                 filasTabla += `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="p-2 font-bold">${d['Taladro']}</td>
@@ -174,13 +103,11 @@
                 `;
             });
 
-            // Actualizar KPIs
             document.getElementById('kpiTotal').innerText = aprobados + desviados;
             document.getElementById('kpiAprobados').innerText = aprobados;
             document.getElementById('kpiDesviados').innerText = desviados;
-            document.getElementById('tablaDetalle').innerHTML = filasTabla || '<tr><td colspan="3" class="text-center p-4">No hay datos para este filtro</td></tr>';
+            document.getElementById('tablaDetalle').innerHTML = filasTabla || '<tr><td colspan="3" class="text-center p-4 text-red-500 font-bold">No hay datos para este filtro</td></tr>';
 
-            // Actualizar Gráfico
             dibujarGrafico(labelsTaladros, dataDensidad);
         }
 
@@ -188,7 +115,7 @@
             const ctx = document.getElementById('graficoTendencia').getContext('2d');
             
             if (graficoInstance) {
-                graficoInstance.destroy(); // Borrar gráfico anterior al filtrar
+                graficoInstance.destroy(); 
             }
 
             graficoInstance = new Chart(ctx, {
@@ -198,31 +125,23 @@
                     datasets: [{
                         label: 'Densidad Medida',
                         data: data,
-                        borderColor: 'rgb(59, 130, 246)', // Azul
+                        borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         borderWidth: 2,
                         pointRadius: 4,
                         pointBackgroundColor: 'rgb(30, 64, 175)',
                         fill: true,
-                        tension: 0.3 // Curvas suaves
+                        tension: 0.3
                     }]
                 },
                 options: {
                     responsive: true,
                     scales: {
-                        y: {
-                            title: { display: true, text: 'Densidad (g/cc)' }
-                        },
-                        x: {
-                            title: { display: true, text: 'N° Taladro' }
-                        }
+                        y: { title: { display: true, text: 'Densidad (g/cc)' } },
+                        x: { title: { display: true, text: 'N° Taladro' } }
                     }
                 }
             });
         }
 
-        // Iniciar al cargar la página
         window.onload = cargarDatos;
-    </script>
-</body>
-</html>
