@@ -3,170 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Densidad</title>
+    <title>Registro de Densidades</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8 min-h-screen flex items-center justify-center">
 
-    <div class="max-w-md mx-auto bg-white p-6 shadow-md mt-4 rounded-lg mb-8">
-        <h2 class="text-xl font-bold mb-6 text-center text-blue-900">Control de Densidades</h2>
-
-        <form id="formularioDensidad" class="space-y-4">
+    <div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full">
+        <h1 class="text-3xl font-bold text-blue-900 mb-6 text-center">Registro de Densidad</h1>
+        
+        <form id="formularioRegistro" class="space-y-4">
             
-            <!-- Equipos (Camión y Vaso) -->
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Camión</label>
-                    <select id="camion" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg bg-white">
-                        <option value="" disabled selected>Seleccione...</option>
-                        <option value="CE-01">CE-01</option>
-                        <option value="CE-02">CE-02</option>
-                        <option value="CE-03">CE-03</option>
-                        <option value="CE-04">CE-04</option>
-                        <option value="CE-05">CE-05</option>
-                        <option value="CE-06">CE-06</option>
-                        <option value="CE-07">CE-07</option>
-                        <option value="CE-08">CE-08</option>
-                    </select>
+                    <label class="block text-sm font-bold text-gray-700">Camión</label>
+                    <input type="text" name="Camión" required class="mt-1 block w-full p-2 border border-gray-300 rounded uppercase" placeholder="Ej. CE-03">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Vaso</label>
-                    <select id="vaso" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg bg-white">
-                        <option value="" disabled selected>Seleccione...</option>
-                        <option value="V001">V001</option>
-                        <option value="V002">V002</option>
-                        <option value="V003">V003</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Nivel y Proyecto -->
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Nivel</label>
-                    <input type="text" id="nivel" placeholder="Ej. 3980" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg uppercase">
+                    <label class="block text-sm font-bold text-gray-700">Vaso</label>
+                    <input type="text" name="Vaso" required class="mt-1 block w-full p-2 border border-gray-300 rounded uppercase" placeholder="Ej. V001">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Proyecto</label>
-                    <input type="text" id="proyecto" placeholder="Ej. P-12" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg uppercase">
-                </div>
-            </div>
-
-            <!-- Tipo de Roca y Tipo de Taladro (NUEVOS CAMPOS) -->
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Tipo de Roca</label>
-                    <select id="tipo_roca" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg bg-white">
-                        <option value="" disabled selected>Elegir...</option>
-                        <option value="HFS">HFS</option>
-                        <option value="ARENISCA">ARENISCA</option>
-                        <option value="ANDESITA">ANDESITA</option>
-                        <option value="ACTINOLITA">ACTINOLITA</option>
-                        <option value="MINERAL">MINERAL</option>
-                        <option value="OXIDO">OXIDO</option>
-                    </select>
+                    <label class="block text-sm font-bold text-gray-700">Nivel</label>
+                    <input type="number" name="Nivel" required class="mt-1 block w-full p-2 border border-gray-300 rounded" placeholder="Ej. 778">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Tipo Taladro</label>
-                    <select id="tipo_taladro" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg bg-white">
-                        <option value="" disabled selected>Elegir...</option>
+                    <label class="block text-sm font-bold text-gray-700">Proyecto</label>
+                    <input type="number" name="Proyecto" required class="mt-1 block w-full p-2 border border-gray-300 rounded" placeholder="Ej. 115">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700">Tipo de Roca</label>
+                    <input type="text" name="Tipo de Roca" required class="mt-1 block w-full p-2 border border-gray-300 rounded uppercase" placeholder="Ej. HFS">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700">Tipo de Taladro</label>
+                    <select name="Tipo de Taladro" required class="mt-1 block w-full p-2 border border-gray-300 rounded">
                         <option value="PRODUCCIÓN">PRODUCCIÓN</option>
-                        <option value="BUFFER">BUFFER</option>
+                        <option value="PRECORTE">PRECORTE</option>
                     </select>
                 </div>
-            </div>
-
-            <!-- Taladro y Tipo de Mezcla -->
-            <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Taladro</label>
-                    <input type="number" id="taladro" placeholder="N°" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg">
+                    <label class="block text-sm font-bold text-gray-700">Taladro N°</label>
+                    <input type="number" name="Taladro" required class="mt-1 block w-full p-2 border border-gray-300 rounded" placeholder="Ej. 105">
                 </div>
+                
+                <!-- IMPORTANTE: El operador elige la mezcla, pero NO ve el rango -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Tipo de Mezcla</label>
-                    <select id="tipo_mezcla" required class="mt-1 block w-full p-3 border border-gray-300 rounded-md text-lg bg-white">
-                        <option value="" disabled selected>Elegir...</option>
-                        <option value="ANFO">ANFO</option>
-                        <option value="HA 19">HA 19</option>
-                        <option value="HA 28">HA 28</option>
+                    <label class="block text-sm font-bold text-gray-700">Tipo de Mezcla</label>
+                    <select name="Tipo de Mezcla" required class="mt-1 block w-full p-2 border border-gray-300 rounded">
+                        <option value="" disabled selected>Seleccione...</option>
                         <option value="HA 37">HA 37</option>
                         <option value="HA 45">HA 45</option>
-                        <option value="HA 46">HA 46</option>
+                        <option value="HA 50">HA 50</option>
+                        <option value="ANFO">ANFO</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Rango y Densidad Medida -->
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Rango (g/cc)</label>
-                    <input type="text" id="rango" readonly class="mt-1 block w-full p-3 border border-gray-200 bg-gray-50 rounded-md text-gray-500 text-lg text-center">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700">Densidad (g/cc)</label>
-                    <input type="number" id="densidad" step="0.001" placeholder="0.000" required class="mt-1 block w-full p-3 border-2 border-blue-400 rounded-md text-xl font-semibold text-center focus:ring-blue-600 focus:border-blue-600">
-                </div>
+            <hr class="my-6">
+
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <label class="block text-lg font-black text-blue-900 text-center mb-2">Densidad Medida (g/cc)</label>
+                <input type="number" step="0.01" name="Densidad Medida" required class="block w-full p-4 border-2 border-blue-400 rounded text-center text-2xl font-bold" placeholder="0.00">
             </div>
 
-            <button type="submit" id="btnSubmit" class="w-full bg-blue-700 text-white p-4 rounded-md text-lg font-bold hover:bg-blue-800 transition-colors mt-6">
-                Registrar Medición
+            <!-- Campo oculto por si tu Google Apps Script requiere que la columna exista para no desordenar el Excel -->
+            <input type="hidden" name="Rango Teórico" value="Calculado en Dashboard">
+            <input type="hidden" name="Fecha/Hora" id="fechaHora">
+
+            <button type="submit" id="btnGuardar" class="w-full bg-blue-700 text-white font-bold py-3 px-4 rounded hover:bg-blue-800 transition-colors mt-4 shadow-lg text-lg">
+                💾 Guardar Registro
             </button>
+            <p id="mensajeExito" class="hidden text-green-600 font-bold text-center mt-2">¡Datos guardados correctamente!</p>
         </form>
     </div>
 
     <script>
-        const rangosDensidad = {
-            "ANFO": "0.795 - 0.855",
-            "HA 19": "0.860 - 0.920",
-            "HA 28": "0.896 - 0.956",
-            "HA 37": "1.010 - 1.070",
-            "HA 45": "1.242 - 1.302",
-            "HA 46": "1.190 - 1.250"
-        };
+        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+        const urlGoogleScript = "https://script.google.com/macros/s/AKfycbyvsDKF4T-Ge4wLAyEoyxS9El2lHlP-El62zbMUBXNc_QKJjbby3y9Lm4VnOsaXrlZ6/exec";
 
-        document.getElementById('tipo_mezcla').addEventListener('change', (e) => {
-            document.getElementById('rango').value = rangosDensidad[e.target.value] || "";
-        });
-
-        document.getElementById('formularioDensidad').addEventListener('submit', (e) => {
+        document.getElementById('formularioRegistro').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const btn = document.getElementById('btnSubmit');
-            btn.innerText = "Enviando...";
+            const btn = document.getElementById('btnGuardar');
+            btn.innerText = "⏳ Guardando...";
             btn.disabled = true;
 
-            const datos = {
-                camion: document.getElementById('camion').value,
-                vaso: document.getElementById('vaso').value,
-                nivel: document.getElementById('nivel').value.toUpperCase(),
-                proyecto: document.getElementById('proyecto').value.toUpperCase(),
-                tipo_roca: document.getElementById('tipo_roca').value,       // NUEVO CAMPO
-                tipo_taladro: document.getElementById('tipo_taladro').value, // NUEVO CAMPO
-                taladro: document.getElementById('taladro').value,
-                tipo_mezcla: document.getElementById('tipo_mezcla').value,
-                rango: document.getElementById('rango').value,
-                densidad_medida: parseFloat(document.getElementById('densidad').value)
-            };
+            // Generar fecha y hora actual automáticamente
+            const ahora = new Date();
+            document.getElementById('fechaHora').value = ahora.toLocaleString('es-PE');
 
-            // RECUERDA: Pegar aquí tu URL de Google Apps Script tras publicar
-            const urlGoogleScript = "https://script.google.com/macros/s/AKfycbyvsDKF4T-Ge4wLAyEoyxS9El2lHlP-El62zbMUBXNc_QKJjbby3y9Lm4VnOsaXrlZ6/exec";
+            const formData = new FormData(this);
 
             fetch(urlGoogleScript, {
                 method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            })
-            .then(() => {
-                alert("Medición registrada con éxito");
-                // Solo se limpian el taladro y la densidad medida
-                document.getElementById('taladro').value = '';
-                document.getElementById('densidad').value = '';
-                document.getElementById('taladro').focus();
-            })
-            .catch(error => alert("Error al enviar los datos"))
-            .finally(() => {
-                btn.innerText = "Registrar Medición";
+                body: formData,
+                mode: 'no-cors' // Necesario para Google Apps Script
+            }).then(() => {
+                btn.innerText = "💾 Guardar Registro";
+                btn.disabled = false;
+                document.getElementById('mensajeExito').classList.remove('hidden');
+                this.reset();
+                setTimeout(() => {
+                    document.getElementById('mensajeExito').classList.add('hidden');
+                }, 3000);
+            }).catch(error => {
+                alert("Hubo un error al guardar. Revisa tu conexión.");
+                btn.innerText = "💾 Guardar Registro";
                 btn.disabled = false;
             });
         });
