@@ -52,7 +52,7 @@
                 </div>
             </div>
 
-            <!-- Tipo de Roca y Tipo de Taladro (NUEVOS CAMPOS) -->
+            <!-- Tipo de Roca y Tipo de Taladro -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Tipo de Roca</label>
@@ -96,12 +96,10 @@
                 </div>
             </div>
 
-            <!-- Rango y Densidad Medida -->
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700">Densidad (g/cc)</label>
-                    <input type="number" id="densidad" step="0.001" placeholder="0.000" required class="mt-1 block w-full p-3 border-2 border-blue-400 rounded-md text-xl font-semibold text-center focus:ring-blue-600 focus:border-blue-600">
-                </div>
+            <!-- Densidad Medida (Ahora ocupa todo el ancho) -->
+            <div>
+                <label class="block text-sm font-bold text-gray-700">Densidad (g/cc)</label>
+                <input type="number" id="densidad" step="0.001" placeholder="0.000" required class="mt-1 block w-full p-3 border-2 border-blue-400 rounded-md text-xl font-semibold text-center focus:ring-blue-600 focus:border-blue-600">
             </div>
 
             <button type="submit" id="btnSubmit" class="w-full bg-blue-700 text-white p-4 rounded-md text-lg font-bold hover:bg-blue-800 transition-colors mt-6">
@@ -111,19 +109,6 @@
     </div>
 
     <script>
-        const rangosDensidad = {
-            "ANFO": "0.795 - 0.855",
-            "HA 19": "0.860 - 0.920",
-            "HA 28": "0.896 - 0.956",
-            "HA 37": "1.010 - 1.070",
-            "HA 45": "1.242 - 1.302",
-            "HA 46": "1.190 - 1.250"
-        };
-
-        document.getElementById('tipo_mezcla').addEventListener('change', (e) => {
-            document.getElementById('rango').value = rangosDensidad[e.target.value] || "";
-        });
-
         document.getElementById('formularioDensidad').addEventListener('submit', (e) => {
             e.preventDefault();
             
@@ -136,11 +121,11 @@
                 vaso: document.getElementById('vaso').value,
                 nivel: document.getElementById('nivel').value.toUpperCase(),
                 proyecto: document.getElementById('proyecto').value.toUpperCase(),
-                tipo_roca: document.getElementById('tipo_roca').value,       // NUEVO CAMPO
-                tipo_taladro: document.getElementById('tipo_taladro').value, // NUEVO CAMPO
+                tipo_roca: document.getElementById('tipo_roca').value,
+                tipo_taladro: document.getElementById('tipo_taladro').value,
                 taladro: document.getElementById('taladro').value,
                 tipo_mezcla: document.getElementById('tipo_mezcla').value,
-                rango: document.getElementById('rango').value,
+                // El campo "rango" ha sido eliminado
                 densidad_medida: parseFloat(document.getElementById('densidad').value)
             };
 
