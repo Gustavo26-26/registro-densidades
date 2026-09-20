@@ -126,14 +126,8 @@
             
             let filtrados = datosGlobales;
             
-            // Convertimos a texto y quitamos espacios para asegurar una comparación exacta
-            if (nivelSel !== "TODOS") {
-                filtrados = filtrados.filter(d => String(d['Nivel']).trim() === String(nivelSel).trim());
-            }
-            
-            if (proyectoSel !== "TODOS") {
-                filtrados = filtrados.filter(d => String(d['Proyecto']).trim() === String(proyectoSel).trim());
-            }
+            if (nivelSel !== "TODOS") filtrados = filtrados.filter(d => d['Nivel'] === nivelSel);
+            if (proyectoSel !== "TODOS") filtrados = filtrados.filter(d => d['Proyecto'] === proyectoSel);
 
             procesarDashboard(filtrados);
         }
