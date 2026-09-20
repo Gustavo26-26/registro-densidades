@@ -18,7 +18,6 @@
             </button>
         </div>
 
-        <!-- Filtros -->
         <!-- Filtros Principales -->
         <div class="bg-white p-6 rounded-lg shadow grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
@@ -58,17 +57,15 @@
             <!-- Columna Principal: Gráficos -->
             <div class="lg:col-span-2 space-y-6">
 
-                <!-- NUEVO GRÁFICO: Dispersión de Densidad vs Tolerancia -->
+                <!-- GRÁFICO TIPO DIANA/VARIANZA XY ADAPTADO A DENSIDAD -->
                 <div class="bg-white p-6 rounded-lg shadow flex flex-col">
                     <div class="flex justify-between items-start mb-4">
                         <h3 class="text-lg font-bold text-gray-700">Dispersión de Densidad vs Tolerancia</h3>
-                        <!-- Filtro Exclusivo para el Gráfico de Dispersión -->
                         <select id="filtroMezclaDispersion" onchange="actualizarGraficoDispersion()" class="p-1 border border-gray-400 rounded bg-blue-50 text-sm font-bold text-blue-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="TODOS">Todas las Mezclas</option>
-                            <!-- Se llena dinámicamente -->
                         </select>
                     </div>
-                    <canvas id="graficoDispersion" height="100"></canvas>
+                    <canvas id="graficoDispersion" height="120"></canvas>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -76,35 +73,22 @@
                         <h3 class="text-lg font-bold mb-4 text-gray-700">Calibración por Camión</h3>
                         <canvas id="graficoCamiones" height="200"></canvas>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4 text-gray-700">Calibración por Vaso</h3>
-                        <canvas id="graficoVasos" height="200"></canvas>
-                    </div>
                     
                     <!-- GRÁFICO: Curva de Gasificación x Toma -->
                     <div class="bg-white p-6 rounded-lg shadow flex flex-col">
                         <div class="flex justify-between items-start mb-4">
                             <h3 class="text-lg font-bold text-gray-700 leading-tight">Control de Densidades<br><span class="text-sm font-normal text-gray-500">x Toma x MMU</span></h3>
-                            
-                            <!-- Filtro Interno para el Producto -->
                             <select id="filtroProductoGrafico" onchange="actualizarGraficoGasificacion()" class="p-1 border border-gray-400 rounded bg-blue-50 text-sm font-bold text-blue-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <!-- Se llena dinámicamente -->
                             </select>
                         </div>
                         <canvas id="graficoGasificacion" height="200"></canvas>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-lg shadow flex flex-col items-center">
-                        <h3 class="text-lg font-bold mb-4 text-gray-700 w-full text-left">Desviaciones por Tipo Mezcla</h3>
-                        <div class="w-full max-w-[250px]">
-                            <canvas id="graficoMezcla" height="250"></canvas>
-                        </div>
-                    </div>
+                <div class="grid grid-cols-1 gap-6">
                     <div class="bg-white p-6 rounded-lg shadow">
                         <h3 class="text-lg font-bold mb-4 text-gray-700">Densidad Promedio por Tipo de Roca</h3>
-                        <canvas id="graficoRoca" height="200"></canvas>
+                        <canvas id="graficoRoca" height="100"></canvas>
                     </div>
                 </div>
 
@@ -134,10 +118,6 @@
     <script>
         const urlGoogleScript = "https://script.google.com/macros/s/AKfycbyvsDKF4T-Ge4wLAyEoyxS9El2lHlP-El62zbMUBXNc_QKJjbby3y9Lm4VnOsaXrlZ6/exec"; 
 
-        // =========================================================
-        // ⚠️ DICCIONARIO INTERNO DE RANGOS ⚠️
-        // EL DASHBOARD EVALÚA AQUÍ SI ESTÁ BIEN O MAL
-        // =========================================================
         const diccionarioRangos = {
             "HA 37": { min: 1.010, max: 1.070 },
             "HA 45": { min: 1.150, max: 1.250 },
@@ -146,17 +126,13 @@
         };
 
         let datosGlobales = [];
-        let filtradosActuales = []; // Guarda los datos después del filtro principal de Nivel/Proyecto
+        let filtradosActuales = []; 
         
-        // Instancias de gráficos
-        let graficoDispersionInstance = null; // NUEVA INSTANCIA
+        let graficoDispersionInstance = null; 
         let graficoCamionesInstance = null;
-        let graficoVasosInstance = null;
         let graficoGasificacionInstance = null;
-        let graficoMezclaInstance = null;
         let graficoRocaInstance = null;
 
-        // Paleta de colores para las líneas de camiones
         const paletaMMU = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
 
         async function cargarDatos() {
@@ -182,11 +158,9 @@
             document.getElementById('filtroProyecto').innerHTML = '<option value="TODOS">Todos los Proyectos</option>' + 
                 proyectos.map(p => `<option value="${p}">${p}</option>`).join('');
 
-            // Llenar filtro interno del gráfico de gasificación
             const selectorProducto = document.getElementById('filtroProductoGrafico');
             selectorProducto.innerHTML = Object.keys(diccionarioRangos).map(p => `<option value="${p}">${p}</option>`).join('');
 
-            // Llenar filtro interno del nuevo gráfico de dispersión
             const selectorDispersion = document.getElementById('filtroMezclaDispersion');
             selectorDispersion.innerHTML = '<option value="TODOS">Todas las Mezclas</option>' + Object.keys(diccionarioRangos).map(p => `<option value="${p}">${p}</option>`).join('');
         }
@@ -214,15 +188,12 @@
             let filasTabla = '';
 
             const desempeñoCamiones = {}; 
-            const desempeñoVasos = {};
-            const desviacionesMezcla = {};
             const acumuladorRoca = {};
 
             datos.forEach(d => {
                 const densidad = parseFloat(d['Densidad Medida']);
                 const mezcla = d['Tipo de Mezcla'] ? String(d['Tipo de Mezcla']).trim() : '';
                 const camion = d['Camión'] ? String(d['Camión']).trim() : 'S/A';
-                const vaso = d['Vaso'] ? String(d['Vaso']).trim() : 'S/A';
                 const roca = d['Tipo de Roca'] ? String(d['Tipo de Roca']).trim() : 'Desconocida';
 
                 if(isNaN(densidad) || !diccionarioRangos[mezcla]) return;
@@ -230,8 +201,6 @@
                 const rangoObjetivo = diccionarioRangos[mezcla];
 
                 if (!desempeñoCamiones[camion]) desempeñoCamiones[camion] = { ok: 0, desviado: 0 };
-                if (!desempeñoVasos[vaso]) desempeñoVasos[vaso] = { ok: 0, desviado: 0 };
-                if (!desviacionesMezcla[mezcla]) desviacionesMezcla[mezcla] = 0;
                 if (!acumuladorRoca[roca]) acumuladorRoca[roca] = { suma: 0, total: 0 };
 
                 acumuladorRoca[roca].suma += densidad;
@@ -241,13 +210,10 @@
                 if (densidad >= rangoObjetivo.min && densidad <= rangoObjetivo.max) {
                     aprobados++;
                     desempeñoCamiones[camion].ok++;
-                    desempeñoVasos[vaso].ok++;
                     estadoHtml = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded font-bold text-xs">🟢 OK</span>';
                 } else {
                     desviados++;
                     desempeñoCamiones[camion].desviado++;
-                    desempeñoVasos[vaso].desviado++;
-                    desviacionesMezcla[mezcla]++; 
                     estadoHtml = '<span class="bg-red-100 text-red-800 px-2 py-1 rounded font-bold text-xs">🔴 DESVIADO</span>';
                 }
 
@@ -266,16 +232,14 @@
             document.getElementById('tablaDetalle').innerHTML = filasTabla || '<tr><td colspan="3" class="text-center p-4 text-red-500 font-bold">No hay datos válidos para este filtro</td></tr>';
 
             dibujarGraficoApilado('graficoCamiones', graficoCamionesInstance, desempeñoCamiones);
-            dibujarGraficoApilado('graficoVasos', graficoVasosInstance, desempeñoVasos);
-            dibujarGraficoDona('graficoMezcla', graficoMezclaInstance, desviacionesMezcla);
             dibujarGraficoRoca('graficoRoca', graficoRocaInstance, acumuladorRoca);
 
             actualizarGraficoGasificacion();
-            actualizarGraficoDispersion(); // Llamamos al nuevo gráfico de dispersión
+            actualizarGraficoDispersion();
         }
 
         // ==========================================
-        // NUEVA LÓGICA: GRÁFICO DISPERSIÓN vs TOLERANCIA
+        // GRÁFICO DISPERSIÓN ESTILO "VARIANZA XY" 
         // ==========================================
         function actualizarGraficoDispersion() {
             const mezclaSel = document.getElementById('filtroMezclaDispersion').value;
@@ -283,7 +247,6 @@
             
             if (graficoDispersionInstance) graficoDispersionInstance.destroy();
 
-            // Filtramos la data global (filtradosActuales ya está filtrado por Nivel/Proyecto)
             let datosParaGrafico = filtradosActuales;
             if (mezclaSel !== "TODOS") {
                 datosParaGrafico = filtradosActuales.filter(d => {
@@ -294,20 +257,24 @@
 
             const dataPuntos = [];
             const coloresPuntos = [];
-            let limiteSuperior = [];
-            let limiteInferior = [];
-            let minEscala = null;
-            let maxEscala = null;
+            let limiteSuperiorRojo = [], limiteInferiorRojo = [];
+            let limiteSuperiorVerde = [], limiteInferiorVerde = [];
+            let minEscala = null, maxEscala = null;
 
-            // Si se selecciona un explosivo específico, definimos la escala y los límites visuales
             if (mezclaSel !== "TODOS" && diccionarioRangos[mezclaSel]) {
                 const limites = diccionarioRangos[mezclaSel];
-                minEscala = limites.min - 0.05;
-                maxEscala = limites.max + 0.05;
+                const centro = (limites.min + limites.max) / 2;
+                const toleranciaMax = (limites.max - limites.min) / 2;
+                const toleranciaMedia = toleranciaMax * 0.5; // Equivalente al círculo verde interno
+
+                minEscala = limites.min - (toleranciaMax * 0.5);
+                maxEscala = limites.max + (toleranciaMax * 0.5);
 
                 datosParaGrafico.forEach((d, index) => {
-                    limiteInferior.push({x: index + 1, y: limites.min});
-                    limiteSuperior.push({x: index + 1, y: limites.max});
+                    limiteInferiorRojo.push({x: index + 1, y: limites.min});
+                    limiteSuperiorRojo.push({x: index + 1, y: limites.max});
+                    limiteInferiorVerde.push({x: index + 1, y: centro - toleranciaMedia});
+                    limiteSuperiorVerde.push({x: index + 1, y: centro + toleranciaMedia});
                 });
             }
 
@@ -321,44 +288,51 @@
                 dataPuntos.push({x: contadorX, y: den});
 
                 const limites = diccionarioRangos[mezcla];
-                if (den >= limites.min && den <= limites.max) {
-                    coloresPuntos.push('rgba(59, 130, 246, 0.8)'); // Azul OK
+                const centro = (limites.min + limites.max) / 2;
+                const toleranciaMax = (limites.max - limites.min) / 2;
+                const toleranciaMedia = toleranciaMax * 0.5;
+                const desviacion = Math.abs(den - centro);
+
+                // Colores basados en la imagen (Varianza XY)
+                if (desviacion <= toleranciaMedia) {
+                    coloresPuntos.push('rgba(59, 130, 246, 0.9)'); // Azul (Centro)
+                } else if (desviacion <= toleranciaMax) {
+                    coloresPuntos.push('rgba(168, 85, 247, 0.9)'); // Morado (Anillo medio)
                 } else {
-                    coloresPuntos.push('rgba(239, 68, 68, 1)'); // Rojo Alerta
+                    coloresPuntos.push('rgba(239, 68, 68, 0.9)'); // Rojo (Fuera de rango)
                 }
                 contadorX++;
             });
 
             let datasets = [{
-                label: 'Densidad Medida',
+                label: 'Densidad',
                 data: dataPuntos,
                 backgroundColor: coloresPuntos,
-                borderColor: coloresPuntos,
-                pointRadius: 5,
-                pointHoverRadius: 8,
+                borderColor: 'rgba(255,255,255,0.2)',
+                borderWidth: 1,
+                pointRadius: 6,
+                pointHoverRadius: 9,
                 type: 'scatter'
             }];
 
             if (mezclaSel !== "TODOS") {
+                // Líneas Rojas (Límites Externos)
                 datasets.push({
-                    label: 'Límite Superior',
-                    data: limiteSuperior,
-                    borderColor: 'rgba(239, 68, 68, 0.5)',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    type: 'line',
-                    pointRadius: 0,
-                    fill: false
+                    label: 'Límite Crítico', data: limiteSuperiorRojo, borderColor: 'rgba(239, 68, 68, 0.7)',
+                    borderWidth: 2, type: 'line', pointRadius: 0, fill: false
                 });
                 datasets.push({
-                    label: 'Límite Inferior',
-                    data: limiteInferior,
-                    borderColor: 'rgba(239, 68, 68, 0.5)',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    type: 'line',
-                    pointRadius: 0,
-                    fill: false
+                    label: 'Límite Crítico', data: limiteInferiorRojo, borderColor: 'rgba(239, 68, 68, 0.7)',
+                    borderWidth: 2, type: 'line', pointRadius: 0, fill: false
+                });
+                // Líneas Verdes (Límites Internos)
+                datasets.push({
+                    label: 'Límite Óptimo', data: limiteSuperiorVerde, borderColor: 'rgba(34, 197, 94, 0.7)',
+                    borderWidth: 2, type: 'line', pointRadius: 0, fill: false
+                });
+                datasets.push({
+                    label: 'Límite Óptimo', data: limiteInferiorVerde, borderColor: 'rgba(34, 197, 94, 0.7)',
+                    borderWidth: 2, type: 'line', pointRadius: 0, fill: false
                 });
             }
 
@@ -373,19 +347,11 @@
                             max: maxEscala !== null ? maxEscala : undefined
                         },
                         x: { 
-                            title: { display: true, text: 'Orden de Medición' },
+                            title: { display: true, text: 'N° de Toma' },
                             ticks: { stepSize: 1 }
                         }
                     },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Toma ${context.raw.x}: ${context.raw.y.toFixed(3)} g/cc`;
-                                }
-                            }
-                        }
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
         }
@@ -411,9 +377,7 @@
                 const densidad = parseFloat(d['Densidad Medida']);
                 
                 let fechaObj = new Date(d['Fecha/Hora']);
-                if(isNaN(fechaObj.getTime())) {
-                    fechaObj = new Date(0); 
-                }
+                if(isNaN(fechaObj.getTime())) fechaObj = new Date(0); 
 
                 if (!agrupadoCamiones[camion]) agrupadoCamiones[camion] = [];
                 if (!isNaN(densidad)) {
@@ -429,9 +393,7 @@
                 agrupadoCamiones[camion].sort((a, b) => a.tiempoObj - b.tiempoObj);
                 const datosOrdenados = agrupadoCamiones[camion].map(item => item.densidad);
                 
-                if (datosOrdenados.length > maxTomas) {
-                    maxTomas = datosOrdenados.length;
-                }
+                if (datosOrdenados.length > maxTomas) maxTomas = datosOrdenados.length;
 
                 datasets.push({
                     label: camion,
@@ -454,15 +416,10 @@
 
             graficoGasificacionInstance = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: labelsEjeX,
-                    datasets: datasets
-                },
+                data: { labels: labelsEjeX, datasets: datasets },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: { title: { display: true, text: 'Densidad (g/cc)' } }
-                    },
+                    scales: { y: { title: { display: true, text: 'Densidad (g/cc)' } } },
                     plugins: {
                         legend: { position: 'right', labels: { boxWidth: 12, usePointStyle: true } },
                         tooltip: { mode: 'index', intersect: false }
@@ -471,7 +428,7 @@
             });
         }
 
-        // Funciones de gráficos restantes (Intactas)
+        // Funciones de gráficos restantes
         function dibujarGraficoApilado(idCanvas, instanciaVar, datosDesempeño) {
             const ctx = document.getElementById(idCanvas).getContext('2d');
             if (instanciaVar) instanciaVar.destroy();
@@ -491,34 +448,6 @@
                     ]
                 },
                 options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true } } }
-            });
-        }
-
-        function dibujarGraficoDona(idCanvas, instanciaVar, datosMezcla) {
-            const ctx = document.getElementById(idCanvas).getContext('2d');
-            if (instanciaVar) instanciaVar.destroy();
-            if (window[idCanvas + 'Instance']) window[idCanvas + 'Instance'].destroy();
-
-            const mezclasConError = Object.keys(datosMezcla).filter(k => datosMezcla[k] > 0);
-            const conteoErrores = mezclasConError.map(k => datosMezcla[k]);
-
-            window[idCanvas + 'Instance'] = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: mezclasConError.length > 0 ? mezclasConError : ['Sin Errores'],
-                    datasets: [{
-                        data: mezclasConError.length > 0 ? conteoErrores : [1],
-                        backgroundColor: mezclasConError.length > 0 ? ['#f87171', '#fb923c', '#facc15', '#60a5fa'] : ['#e5e7eb'],
-                        borderWidth: 1
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    plugins: { 
-                        legend: { position: 'bottom' },
-                        tooltip: { callbacks: { label: function(context) { return ' Errores: ' + context.raw; } } }
-                    } 
-                }
             });
         }
 
