@@ -13,28 +13,28 @@
         <!-- Encabezado -->
         <div class="bg-blue-900 text-white p-6 rounded-lg shadow-lg flex justify-between items-center">
             <h1 class="text-2xl font-bold">Panel de Control de Voladura</h1>
-            <button onclick="cargarDatos()" class="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded shadow transition">
+            <button onclick="cargarDatos()" class="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded shadow">
                 🔄 Actualizar Datos
             </button>
         </div>
 
-        <!-- Filtros Generales (Afectan KPIs y Tabla) -->
-        <div class="bg-white p-6 rounded-lg shadow grid grid-cols-1 md:grid-cols-3 gap-4 items-end border-t-4 border-blue-900">
+        <!-- Filtros -->
+        <div class="bg-white p-6 rounded-lg shadow grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Nivel</label>
-                <select id="filtroNivel" onchange="aplicarFiltros()" class="mt-1 block w-full p-2 border border-gray-300 rounded text-lg bg-gray-50">
+                <select id="filtroNivel" class="mt-1 block w-full p-2 border border-gray-300 rounded text-lg bg-gray-50">
                     <option value="TODOS">Todos los Niveles</option>
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Proyecto</label>
-                <select id="filtroProyecto" onchange="aplicarFiltros()" class="mt-1 block w-full p-2 border border-gray-300 rounded text-lg bg-gray-50">
+                <select id="filtroProyecto" class="mt-1 block w-full p-2 border border-gray-300 rounded text-lg bg-gray-50">
                     <option value="TODOS">Todos los Proyectos</option>
                 </select>
             </div>
-            <div class="text-sm text-gray-500 italic">
-                *Estos filtros afectan el resumen y la tabla de detalles.
-            </div>
+            <button onclick="aplicarFiltros()" class="bg-green-600 text-white p-2 rounded text-lg font-bold hover:bg-green-700">
+                Aplicar Filtros
+            </button>
         </div>
 
         <!-- KPIs (Tarjetas de Resumen) -->
@@ -54,32 +54,22 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Gráfico de Dispersión (Con Filtro de Mezcla Integrado) -->
+            <!-- Gráfico de Tendencia -->
             <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-gray-700">Dispersión de Densidad vs Tolerancia</h3>
-                    
-                    <!-- Filtro Exclusivo para el Gráfico -->
-                    <select id="filtroMezclaGrafico" onchange="aplicarFiltros()" class="p-2 border border-gray-300 rounded text-md bg-gray-50 font-bold text-blue-900">
-                        <option value="TODOS">Todas las Mezclas</option>
-                        <!-- Se llena con JS -->
-                    </select>
-                </div>
-                <canvas id="graficoDispersion" height="120"></canvas>
+                <h3 class="text-lg font-bold mb-4 text-gray-700">Tendencia de Densidad por Taladro</h3>
+                <canvas id="graficoTendencia" height="100"></canvas>
             </div>
 
             <!-- Lista de Taladros Críticos -->
             <div class="bg-white p-6 rounded-lg shadow overflow-hidden flex flex-col">
                 <h3 class="text-lg font-bold mb-4 text-gray-700">Detalle de Mediciones</h3>
-                <div class="overflow-y-auto flex-1 max-h-96 border rounded">
+                <div class="overflow-y-auto flex-1 max-h-80">
                     <table class="w-full text-left border-collapse">
-                        <thead class="sticky top-0 bg-gray-200">
-                            <tr class="text-xs text-gray-700 uppercase">
+                        <thead>
+                            <tr class="bg-gray-100 text-sm">
                                 <th class="p-2 border-b">Taladro</th>
-                                <th class="p-2 border-b">Mezcla</th>
-                                <th class="p-2 border-b">Dens.</th>
-                                <th class="p-2 border-b">Est.</th>
+                                <th class="p-2 border-b">Densidad</th>
+                                <th class="p-2 border-b">Estado</th>
                             </tr>
                         </thead>
                         <tbody id="tablaDetalle" class="text-sm">
@@ -92,222 +82,152 @@
     </div>
 
     <script>
-        // PEGA AQUÍ TU URL DE APPS SCRIPT
+        // ¡PEGA AQUÍ TU URL DE APPS SCRIPT!
         const urlGoogleScript = "https://script.google.com/macros/s/AKfycbyvsDKF4T-Ge4wLAyEoyxS9El2lHlP-El62zbMUBXNc_QKJjbby3y9Lm4VnOsaXrlZ6/exec"; 
         
         let datosGlobales = [];
         let graficoInstance = null;
 
-        // Limites teóricos que definimos para graficar las líneas base
-        const limitesTeoricos = {
-            "ANFO":  {min: 0.795, max: 0.855},
-            "HA 19": {min: 0.860, max: 0.920},
-            "HA 28": {min: 0.896, max: 0.956},
-            "HA 37": {min: 1.010, max: 1.070},
-            "HA 45": {min: 1.242, max: 1.302},
-            "HA 46": {min: 1.190, max: 1.250}
-        };
-
         async function cargarDatos() {
             try {
-                document.getElementById('tablaDetalle').innerHTML = '<tr><td colspan="4" class="text-center p-4">Sincronizando con Google Sheets...</td></tr>';
+                // Cambiamos el texto del botón mientras carga
+                document.getElementById('tablaDetalle').innerHTML = '<tr><td colspan="3" class="text-center p-4">Cargando datos desde la mina...</td></tr>';
+                
                 const respuesta = await fetch(urlGoogleScript);
                 datosGlobales = await respuesta.json();
                 
+                // Extraer Niveles y Proyectos únicos para los filtros
                 llenarFiltros();
-                aplicarFiltros();
+                aplicarFiltros(); // Dibuja la primera vez con todos los datos
             } catch (error) {
                 console.error("Error cargando datos:", error);
-                alert("Error de conexión. Verifica la URL de Apps Script.");
+                alert("Error al conectar con la base de datos.");
             }
         }
 
         function llenarFiltros() {
             const niveles = [...new Set(datosGlobales.map(d => d['Nivel']))].filter(Boolean);
             const proyectos = [...new Set(datosGlobales.map(d => d['Proyecto']))].filter(Boolean);
-            const mezclas = [...new Set(datosGlobales.map(d => d['Tipo de Mezcla']))].filter(Boolean);
             
-            const selNivel = document.getElementById('filtroNivel');
-            const selProyecto = document.getElementById('filtroProyecto');
-            const selMezcla = document.getElementById('filtroMezclaGrafico');
+            const selectNivel = document.getElementById('filtroNivel');
+            const selectProyecto = document.getElementById('filtroProyecto');
             
-            selNivel.innerHTML = '<option value="TODOS">Todos los Niveles</option>' + niveles.map(n => `<option value="${n}">${n}</option>`).join('');
-            selProyecto.innerHTML = '<option value="TODOS">Todos los Proyectos</option>' + proyectos.map(p => `<option value="${p}">${p}</option>`).join('');
-            selMezcla.innerHTML = '<option value="TODOS">Ver Todas</option>' + mezclas.map(m => `<option value="${m}">${m}</option>`).join('');
+            // Mantener la opción "Todos" y agregar las nuevas
+            selectNivel.innerHTML = '<option value="TODOS">Todos los Niveles</option>' + 
+                niveles.map(n => `<option value="${n}">${n}</option>`).join('');
+            
+            selectProyecto.innerHTML = '<option value="TODOS">Todos los Proyectos</option>' + 
+                proyectos.map(p => `<option value="${p}">${p}</option>`).join('');
         }
 
         function aplicarFiltros() {
-            // Filtros Globales (Afectan a todo)
-            const nSel = document.getElementById('filtroNivel').value;
-            const pSel = document.getElementById('filtroProyecto').value;
+            const nivelSel = document.getElementById('filtroNivel').value;
+            const proyectoSel = document.getElementById('filtroProyecto').value;
             
-            let datosGenerales = datosGlobales;
-            if (nSel !== "TODOS") datosGenerales = datosGenerales.filter(d => d['Nivel'] === nSel);
-            if (pSel !== "TODOS") datosGenerales = datosGenerales.filter(d => d['Proyecto'] === pSel);
-
-            procesarTablayKPI(datosGenerales);
-
-            // Filtro Exclusivo del Gráfico (Adicional a los globales)
-            const mSel = document.getElementById('filtroMezclaGrafico').value;
-            let datosGrafico = datosGenerales;
-            if (mSel !== "TODOS") datosGrafico = datosGrafico.filter(d => d['Tipo de Mezcla'] === mSel);
+            let filtrados = datosGlobales;
             
-            procesarGraficoDispersion(datosGrafico, mSel);
+            // Convertimos a texto y quitamos espacios para asegurar una comparación exacta
+            if (nivelSel !== "TODOS") {
+                filtrados = filtrados.filter(d => String(d['Nivel']).trim() === String(nivelSel).trim());
+            }
+            
+            if (proyectoSel !== "TODOS") {
+                filtrados = filtrados.filter(d => String(d['Proyecto']).trim() === String(proyectoSel).trim());
+            }
+
+            procesarDashboard(filtrados);
         }
 
-        function procesarTablayKPI(datos) {
-            let aprob = 0, desv = 0;
-            let filasHtml = '';
+        function procesarDashboard(datos) {
+            let aprobados = 0;
+            let desviados = 0;
+            let filasTabla = '';
             
-            datos.forEach(d => {
-                const den = parseFloat(d['Densidad Medida']);
-                const rangoStr = d['Rango Teórico'];
-                if(isNaN(den) || !rangoStr) return;
+            const labelsTaladros = [];
+            const dataDensidad = [];
 
+            datos.forEach(d => {
+                const densidad = parseFloat(d['Densidad Medida']);
+                const rangoStr = d['Rango Teórico']; // Ej: "1.010 - 1.070"
+                
+                if(isNaN(densidad) || !rangoStr) return;
+
+                // Lógica del Semáforo
                 const partes = rangoStr.split('-');
                 const min = parseFloat(partes[0].trim());
                 const max = parseFloat(partes[1].trim());
                 
-                let estadoColor = '';
-                if (den >= min && den <= max) {
-                    aprob++;
-                    estadoColor = '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-bold">OK</span>';
+                let estadoHtml = '';
+                if (densidad >= min && densidad <= max) {
+                    aprobados++;
+                    estadoHtml = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded font-bold text-xs">🟢 OK</span>';
                 } else {
-                    desv++;
-                    estadoColor = '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">DESV</span>';
+                    desviados++;
+                    estadoHtml = '<span class="bg-red-100 text-red-800 px-2 py-1 rounded font-bold text-xs">🔴 DESVIADO</span>';
                 }
 
-                filasHtml += `
+                // Datos para el gráfico
+                labelsTaladros.push(`Tal-${d['Taladro']}`);
+                dataDensidad.push(densidad);
+
+                // Filas de la tabla
+                filasTabla += `
                     <tr class="border-b hover:bg-gray-50">
-                        <td class="p-2 font-bold text-gray-700">${d['Taladro']}</td>
-                        <td class="p-2 text-xs">${d['Tipo de Mezcla']}</td>
-                        <td class="p-2 font-mono">${den.toFixed(3)}</td>
-                        <td class="p-2">${estadoColor}</td>
+                        <td class="p-2 font-bold">${d['Taladro']}</td>
+                        <td class="p-2">${densidad.toFixed(3)}</td>
+                        <td class="p-2">${estadoHtml}</td>
                     </tr>
                 `;
             });
 
-            document.getElementById('kpiTotal').innerText = aprob + desv;
-            document.getElementById('kpiAprobados').innerText = aprob;
-            document.getElementById('kpiDesviados').innerText = desv;
-            document.getElementById('tablaDetalle').innerHTML = filasHtml || '<tr><td colspan="4" class="text-center p-4">Sin datos</td></tr>';
+            // Actualizar KPIs
+            document.getElementById('kpiTotal').innerText = aprobados + desviados;
+            document.getElementById('kpiAprobados').innerText = aprobados;
+            document.getElementById('kpiDesviados').innerText = desviados;
+            document.getElementById('tablaDetalle').innerHTML = filasTabla || '<tr><td colspan="3" class="text-center p-4">No hay datos para este filtro</td></tr>';
+
+            // Actualizar Gráfico
+            dibujarGrafico(labelsTaladros, dataDensidad);
         }
 
-        function procesarGraficoDispersion(datos, mezclaSeleccionada) {
-            const dataPuntos = [];
-            const coloresPuntos = [];
-            
-            // Si eligen una mezcla específica, ajustamos la escala Y del gráfico
-            let minEscala = null;
-            let maxEscala = null;
-            let limiteSuperior = [];
-            let limiteInferior = [];
-
-            if(mezclaSeleccionada !== "TODOS" && limitesTeoricos[mezclaSeleccionada]) {
-                const l = limitesTeoricos[mezclaSeleccionada];
-                minEscala = l.min - 0.05; // Margen visual
-                maxEscala = l.max + 0.05;
-                
-                // Creamos líneas horizontales para los límites
-                datos.forEach((d, index) => {
-                    limiteInferior.push({x: index + 1, y: l.min});
-                    limiteSuperior.push({x: index + 1, y: l.max});
-                });
-            }
-
-            datos.forEach((d, index) => {
-                const den = parseFloat(d['Densidad Medida']);
-                const rangoStr = d['Rango Teórico'];
-                if(isNaN(den)) return;
-
-                // Estructura para gráfico scatter de Chart.js (X es el orden, Y es la densidad)
-                dataPuntos.push({x: index + 1, y: den});
-
-                // Definir color del punto (Rojo si está fuera de su rango)
-                const partes = rangoStr.split('-');
-                const min = parseFloat(partes[0].trim());
-                const max = parseFloat(partes[1].trim());
-                
-                if (den >= min && den <= max) {
-                    coloresPuntos.push('rgba(59, 130, 246, 0.8)'); // Azul OK
-                } else {
-                    coloresPuntos.push('rgba(239, 68, 68, 1)'); // Rojo Alerta
-                }
-            });
-
-            dibujarGrafico(dataPuntos, coloresPuntos, limiteSuperior, limiteInferior, minEscala, maxEscala, mezclaSeleccionada);
-        }
-
-        function dibujarGrafico(puntos, colores, lineaSup, lineaInf, minY, maxY, mezcla) {
-            const ctx = document.getElementById('graficoDispersion').getContext('2d');
+        function dibujarGrafico(labels, data) {
+            const ctx = document.getElementById('graficoTendencia').getContext('2d');
             
             if (graficoInstance) {
-                graficoInstance.destroy();
-            }
-
-            const datasets = [{
-                label: 'Densidad Medida',
-                data: puntos,
-                backgroundColor: colores,
-                borderColor: colores,
-                pointRadius: 6,
-                pointHoverRadius: 9,
-                type: 'scatter'
-            }];
-
-            // Solo mostrar líneas de tolerancia si hay una mezcla específica seleccionada
-            if(mezcla !== "TODOS") {
-                datasets.push({
-                    label: 'Límite Superior',
-                    data: lineaSup,
-                    borderColor: 'rgba(239, 68, 68, 0.5)', // Rojo transparente
-                    borderWidth: 2,
-                    borderDash: [5, 5], // Línea punteada
-                    type: 'line',
-                    pointRadius: 0,
-                    fill: false
-                });
-                datasets.push({
-                    label: 'Límite Inferior',
-                    data: lineaInf,
-                    borderColor: 'rgba(239, 68, 68, 0.5)',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    type: 'line',
-                    pointRadius: 0,
-                    fill: false
-                });
+                graficoInstance.destroy(); // Borrar gráfico anterior al filtrar
             }
 
             graficoInstance = new Chart(ctx, {
-                data: { datasets: datasets },
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Densidad Medida',
+                        data: data,
+                        borderColor: 'rgb(59, 130, 246)', // Azul
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: 'rgb(30, 64, 175)',
+                        fill: true,
+                        tension: 0.3 // Curvas suaves
+                    }]
+                },
                 options: {
                     responsive: true,
                     scales: {
                         y: {
-                            title: { display: true, text: 'Densidad (g/cc)' },
-                            // Fijar límites Y si hay filtro, sino automático
-                            min: minY !== null ? minY : undefined,
-                            max: maxY !== null ? maxY : undefined,
+                            title: { display: true, text: 'Densidad (g/cc)' }
                         },
                         x: {
-                            title: { display: true, text: 'Mediciones (Orden Cronológico)' },
-                            ticks: { stepSize: 1 }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Medición ${context.raw.x}: ${context.raw.y.toFixed(3)} g/cc`;
-                                }
-                            }
+                            title: { display: true, text: 'N° Taladro' }
                         }
                     }
                 }
             });
         }
 
+        // Iniciar al cargar la página
         window.onload = cargarDatos;
     </script>
 </body>
